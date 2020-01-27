@@ -51,9 +51,20 @@ def mirror(name):
     data = {"name": name}
     return create_response(data)
 
-@app.route("/shows", methods=['GET'])
-def get_all_shows():
-    return create_response({"shows": db.get('shows')})
+
+# TODO: Implement the rest of the API here!
+
+@app.route("/shows",methods=['GET'])
+def get_minEpisodes():
+    if request.args.get('minEpisodes'):
+        minEpisodes = request.args.get('minEpisodes')
+        temp = list()
+        for i in db.get("shows"):
+            if i['episodes_seen'] >= int(minEpisodes):
+                temp.append(i)
+        return create_response({"shows": temp})
+    else:
+        return create_response({"shows": db.get('shows')})
 
 @app.route("/shows/<id>", methods=['DELETE'])
 def delete_show(id):
@@ -63,8 +74,33 @@ def delete_show(id):
     return create_response(message="Show deleted")
 
 
-# TODO: Implement the rest of the API here!
+@app.route("/shows/<id>", methods=['GET'])
+def get_show(id):
+    if db.getById('shows', int(id)) is None:
+        return create_response(status=404, message="No show with this id exists")
+    return create_response({"shows": db.getById('shows', int(id))})
 
+@app.route("/shows", methods=['POST'])
+def post_show():
+    req = request.get_json()
+    if "name" in req and "episodes_seen" in req : 
+        name = req['name']
+        episodes_seen = req['episodes_seen']
+        payload = {"name":name,"episodes_seen":episodes_seen}
+        payload = db.create('shows',payload)
+        return create_response(status=201,data={"shows": db.getById('shows', int(payload["id"]))})
+    return create_response(status=422, message="You didn't provide enough info")
+
+@app.route("/shows/<id>", methods=['PUT'])
+def update_show(id):
+    req = request.get_json()
+    item = db.updateById('shows',int(id),req)
+    if item is None:
+        return create_response(status=404,message="No show with this id exists")
+    return create_response(status=201,data={"shows": db.getById('shows', int(id))})
+
+          
+    
 """
 ~~~~~~~~~~~~ END API ~~~~~~~~~~~~
 """
